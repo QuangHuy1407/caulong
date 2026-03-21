@@ -4,15 +4,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Cầu Lông KTH</title>
-<!-- PWA -->
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Cầu Lông">
+<meta name="application-name" content="Cầu Lông KTH">
+<meta name="theme-color" content="#0d0f14" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#0d0f14">
+<meta name="msapplication-TileColor" content="#0d0f14">
+<meta name="msapplication-navbutton-color" content="#0d0f14">
 <meta name="description" content="App bình chọn & chia tiền đánh cầu lông">
 <!-- Icons -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d0f14'/><text y='.9em' font-size='80' x='10'>🏸</text></svg>">
+<link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="96x96"  href="icons/icon-96.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap" rel="stylesheet">
@@ -23,43 +31,16 @@
   --accent:#c8ff47; --accent2:#47d4ff; --accent3:#ff6b47;
   --text:#f0f2f7; --muted:#6b7280; --border:rgba(255,255,255,0.07);
   --green:#22c55e; --red:#ef4444; --r:14px;
-  --app-w: min(480px, 100vw);
+  --sidebar-w: 220px;
 }
+
+/* ── BASE (Mobile first) ── */
 body {
   font-family:'Be Vietnam Pro',sans-serif; background:#060810;
   color:var(--text); min-height:100vh;
-  display:flex; justify-content:center;
 }
-/* Tất cả page chiếm đúng chiều rộng app */
-.page { width:var(--app-w); background:var(--bg); min-height:100vh; flex-shrink:0; display:none; flex-direction:column; }
+.page { width:100%; background:var(--bg); min-height:100vh; display:none; flex-direction:column; }
 .page.active { display:flex; }
-/* Fixed elements: căn giữa màn hình, giới hạn đúng width */
-.bnav {
-  position:fixed; bottom:0;
-  left:50%; transform:translateX(-50%);
-  width:var(--app-w);
-}
-.overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:500; }
-.overlay.show { display:flex; }
-.sheet-bg {
-  position:fixed; inset:0; background:rgba(0,0,0,.6);
-  z-index:300; display:none; align-items:flex-end; justify-content:center;
-}
-.sheet-bg.show { display:flex; }
-.sheet { width:var(--app-w); }
-.lightbox { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:600; display:none; align-items:center; justify-content:center; padding:16px; }
-.lightbox.show { display:flex; }
-.toast {
-  position:fixed; bottom:88px;
-  left:50%; transform:translateX(-50%) translateY(14px);
-  background:var(--bg3); border:1px solid var(--border); color:var(--text);
-  padding:10px 20px; border-radius:30px; font-size:13px; font-weight:500;
-  z-index:999; opacity:0; transition:all .25s; white-space:nowrap; pointer-events:none;
-}
-.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-.toast.ok { border-color:rgba(34,197,94,.4); color:var(--green); }
-.toast.err { border-color:rgba(239,68,68,.4); color:var(--red); }
-
 
 .hdr {
   padding:48px 20px 13px; display:flex; align-items:center; gap:12px;
@@ -69,6 +50,13 @@ body {
 .hdr-title { font-size:17px; font-weight:700; flex:1; }
 .content { flex:1; padding:16px 20px 110px; }
 
+/* Bottom nav (mobile) */
+.bnav {
+  position:fixed; bottom:0; left:0; right:0;
+  background:rgba(20,23,30,0.97); backdrop-filter:blur(20px);
+  border-top:1px solid var(--border); display:flex;
+  padding-bottom:env(safe-area-inset-bottom); z-index:100;
+}
 .ni {
   flex:1; display:flex; flex-direction:column; align-items:center;
   padding:9px 0; gap:3px; cursor:pointer; color:var(--muted);
@@ -76,8 +64,83 @@ body {
 }
 .ni.active { color:var(--accent); }
 .ni-icon { font-size:22px; line-height:1; }
-/* bnav background — bổ sung vào selector đã khai báo ở trên */
-.bnav { background:rgba(20,23,30,0.97); backdrop-filter:blur(20px); border-top:1px solid var(--border); display:flex; padding-bottom:env(safe-area-inset-bottom); z-index:100; }
+
+/* Fixed overlays */
+.overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:500; }
+.overlay.show { display:flex; }
+.sheet-bg { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:300; display:none; align-items:flex-end; justify-content:center; }
+.sheet-bg.show { display:flex; }
+.sheet { width:100%; max-width:480px; }
+.lightbox { position:fixed; inset:0; background:rgba(0,0,0,.92); z-index:600; display:none; align-items:center; justify-content:center; padding:16px; }
+.lightbox.show { display:flex; }
+.toast {
+  position:fixed; bottom:88px; left:50%; transform:translateX(-50%) translateY(14px);
+  background:var(--bg3); border:1px solid var(--border); color:var(--text);
+  padding:10px 20px; border-radius:30px; font-size:13px; font-weight:500;
+  z-index:999; opacity:0; transition:all .25s; white-space:nowrap; pointer-events:none;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+.toast.ok { border-color:rgba(34,197,94,.4); color:var(--green); }
+.toast.err { border-color:rgba(239,68,68,.4); color:var(--red); }
+
+/* ── DESKTOP (≥ 768px) ── */
+@media (min-width: 768px) {
+  body { background:#08090f; flex-direction:row; }
+
+  /* Desktop wrapper */
+  #desktop-layout {
+    display:flex; width:100%; min-height:100vh;
+  }
+
+  /* Sidebar */
+  #desktop-sidebar {
+    width:var(--sidebar-w); min-height:100vh; flex-shrink:0;
+    background:var(--bg2); border-right:1px solid var(--border);
+    position:fixed; top:0; left:0; bottom:0;
+    display:flex; flex-direction:column; padding:28px 0 20px; z-index:50;
+  }
+  #sidebar-logo {
+    padding:0 20px 28px;
+    border-bottom:1px solid var(--border);
+    margin-bottom:12px;
+  }
+  .snav-item {
+    display:flex; align-items:center; gap:12px;
+    padding:11px 20px; cursor:pointer; color:var(--muted);
+    font-size:14px; font-weight:500; border:none; background:none;
+    width:100%; text-align:left; transition:all .15s;
+    border-radius:0;
+  }
+  .snav-item:hover { background:rgba(255,255,255,.04); color:var(--text); }
+  .snav-item.active { background:rgba(200,255,71,.08); color:var(--accent); border-right:2px solid var(--accent); }
+  .snav-icon { font-size:20px; width:24px; text-align:center; }
+  #sidebar-user {
+    margin-top:auto; padding:16px 20px 0;
+    border-top:1px solid var(--border);
+  }
+
+  /* Main content area */
+  #desktop-main {
+    margin-left:var(--sidebar-w); flex:1; display:flex; justify-content:center;
+    min-height:100vh;
+  }
+  .page {
+    max-width:640px; width:100%;
+    min-height:100vh;
+  }
+  /* Hide mobile bottom nav on desktop */
+  .bnav { display:none !important; }
+  /* Adjust header padding for desktop (no notch) */
+  .hdr { padding:20px 24px 14px; }
+  /* More content padding, no bottom nav space */
+  .content { padding:20px 24px 40px; }
+  /* Auth page on desktop */
+  .auth-wrap { max-width:440px; margin:0 auto; padding:60px 32px; }
+  /* Sheet max width */
+  .sheet { max-width:520px; }
+  /* Toast position */
+  .toast { bottom:24px; }
+}
 
 /* ── Auth ── */
 .auth-wrap { display:flex; flex-direction:column; justify-content:center; min-height:100vh; padding:48px 24px 40px; }
@@ -310,6 +373,17 @@ body {
 .method-btn.active-fund { background:rgba(167,139,250,.1); border-color:rgba(167,139,250,.4); color:#a78bfa; }
 
 /* Admin member card */
+/* ── Guest member row ── */
+.guest-row {
+  display:flex; align-items:center; gap:10px;
+  background:rgba(255,107,71,.06); border:1px solid rgba(255,107,71,.2);
+  border-radius:var(--r); padding:10px 14px; margin-bottom:6px;
+}
+.guest-badge { background:rgba(255,107,71,.15); color:var(--accent3); font-size:9px; padding:2px 7px; border-radius:8px; font-weight:700; white-space:nowrap; }
+.guest-pay-row {
+  background:rgba(255,107,71,.05); border:1px solid rgba(255,107,71,.2);
+  border-radius:var(--r);
+}
 .admin-member-card {
   background:var(--card); border:1px solid var(--border); border-radius:16px;
   padding:14px 16px; margin-bottom:10px;
@@ -330,6 +404,42 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
   <img id="lightbox-img" src="" alt="" style="display:none">
 </div>
+
+<!-- ══════════════════════════════
+     DESKTOP SIDEBAR (ẩn trên mobile qua CSS)
+══════════════════════════════ -->
+<div id="desktop-sidebar" style="display:none">
+  <div id="sidebar-logo">
+    <div class="logo" style="font-size:26px">Cầu <span>Lông</span></div>
+    <div style="color:var(--muted);font-size:12px;margin-top:4px">Xin chào, <span id="sidebar-username" style="color:var(--text);font-weight:600"></span></div>
+    <div style="margin-top:6px;display:flex;align-items:center;gap:6px">
+      <span style="font-size:10px;color:var(--muted)">Quỹ:</span>
+      <span id="sidebar-balance" style="font-size:13px;font-weight:700;color:#a78bfa">—</span>
+    </div>
+  </div>
+  <button class="snav-item active" id="snav-home" onclick="goPage('pg-home')">
+    <span class="snav-icon">🏠</span> Trang chủ
+  </button>
+  <button class="snav-item" id="snav-fund" onclick="goPage('pg-fund')">
+    <span class="snav-icon">🏦</span> Quỹ
+  </button>
+  <button class="snav-item" id="snav-create" onclick="goPage('pg-create')">
+    <span class="snav-icon">➕</span> Tạo buổi
+  </button>
+  <div id="snav-admin" style="display:none">
+    <button class="snav-item" onclick="goPage('pg-admin')">
+      <span class="snav-icon">🔑</span> Admin quỹ
+    </button>
+  </div>
+  <div id="sidebar-user">
+    <button onclick="doExit()" class="snav-item" style="color:var(--muted)">
+      <span class="snav-icon">🚪</span> Đổi SĐT
+    </button>
+  </div>
+</div>
+
+<!-- Desktop main content wrapper -->
+<div id="desktop-main">
 
 <!-- ══════════════════════════════
      TRANG: LOADING SPLASH
@@ -414,7 +524,9 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
   <div class="hdr">
     <div style="flex:1">
       <div class="logo" style="font-size:22px">Cầu <span>Lông</span></div>
-      <div style="color:var(--muted);font-size:12px;margin-top:1px">Xin chào, <span id="home-name" style="color:var(--text);font-weight:600"></span> 👋</div>
+      <div style="color:var(--muted);font-size:12px;margin-top:1px">Xin chào, <span id="home-name" style="color:var(--text);font-weight:600"></span> 👋
+        · Quỹ: <span id="home-balance" style="font-weight:700;color:#a78bfa">—</span>
+      </div>
     </div>
     <button class="btn-ghost" onclick="doExit()" style="padding:7px 12px;font-size:12px">Đổi SĐT</button>
   </div>
@@ -464,8 +576,13 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
   <div class="hdr">
     <div class="back-btn" onclick="goPage('pg-home')">←</div>
     <div class="hdr-title" id="s-hdr">Buổi chơi</div>
-    <div id="host-close-btn" style="display:none">
-      <button class="btn-ghost" style="padding:7px 12px;font-size:12px;color:var(--accent);border-color:rgba(200,255,71,.3)" onclick="doClose()">Khóa buổi ✓</button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="host-edit-btn" style="display:none">
+        <button class="btn-ghost" style="padding:7px 12px;font-size:12px" onclick="openEditSheet()">✏️ Sửa</button>
+      </div>
+      <div id="host-close-btn" style="display:none">
+        <button class="btn-ghost" style="padding:7px 12px;font-size:12px;color:var(--accent);border-color:rgba(200,255,71,.3)" onclick="doClose()">Khóa buổi ✓</button>
+      </div>
     </div>
   </div>
   <div class="content">
@@ -484,16 +601,6 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
       </div>
     </div>
 
-    <!-- Share box (host only, khi đang mở) -->
-    <div id="sharebox" style="display:none" class="sharebox">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Mã mời dự phòng — nếu thành viên không thấy buổi</div>
-      <div class="code-big" id="share-code"></div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        <button class="btn-ghost" onclick="copyCode()" style="font-size:13px">📋 Sao chép mã</button>
-        <button class="btn-ghost" onclick="copyLink()" style="font-size:13px">🔗 Sao chép link</button>
-      </div>
-    </div>
-
     <!-- Tabs: Bình chọn / Đã xác nhận / Chi phí -->
     <div class="tabs" id="session-tabs" style="display:grid;grid-template-columns:1fr 1fr 1fr">
       <button class="tab active" id="stab-vote" onclick="switchSessionTab('vote')">🗳 Bình chọn</button>
@@ -505,6 +612,31 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
     <div id="tab-pane-vote">
       <div style="color:var(--muted);font-size:12px;margin-bottom:12px" id="s-hint"></div>
       <div id="vote-list"></div>
+
+      <!-- Khách vãng lai (host only) -->
+      <div id="guest-mgmt-wrap" style="display:none;margin-top:4px">
+        <div class="sec" style="margin-top:20px;margin-bottom:8px">
+          <div class="sec-t" style="display:flex;align-items:center;gap:6px">
+            <span style="font-size:16px">👤</span> Khách vãng lai
+            <span id="guest-count-badge" style="background:rgba(255,107,71,.15);color:var(--accent3);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700"></span>
+          </div>
+        </div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:10px">Thành viên không có tài khoản — host nhập tay. Tiền của họ không tính vào quỹ chung.</div>
+        <div id="guest-list"></div>
+        <div id="add-guest-form" style="display:none;margin-top:6px">
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="fi" id="guest-name-input" placeholder="Nhập tên khách..." style="flex:1;padding:11px 14px;font-size:14px"
+              onkeydown="if(event.key==='Enter')addGuest()">
+            <button class="btn-sm" onclick="addGuest()">✓ Thêm</button>
+          </div>
+        </div>
+        <button id="toggle-guest-btn" onclick="toggleGuestForm()"
+          style="margin-top:8px;width:100%;padding:10px;border-radius:12px;
+          background:rgba(255,107,71,.08);border:1px dashed rgba(255,107,71,.3);
+          color:var(--accent3);font-family:'Be Vietnam Pro',sans-serif;font-size:13px;
+          font-weight:700;cursor:pointer">+ Thêm khách vãng lai</button>
+      </div>
+
       <div id="pay-btn-wrap" style="margin-top:4px"></div>
     </div>
 
@@ -567,11 +699,57 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 </div>
 
 <!-- ══════════════════════════════
+     BOTTOM SHEET: CHỈNH SỬA BUỔI
+══════════════════════════════ -->
+<div class="sheet-bg" id="edit-session-bg" onclick="closeEditSheet(event)">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div style="font-size:17px;font-weight:800;margin-bottom:18px">✏️ Chỉnh sửa buổi</div>
+
+    <div class="fg"><label class="fl">Tên buổi</label>
+      <input class="fi" id="edit-title" placeholder="VD: Cầu lông thứ 5">
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Ngày</label>
+        <input class="fi" id="edit-date" type="date">
+      </div>
+      <div class="fg"><label class="fl">Giờ</label>
+        <input class="fi" id="edit-time" type="time">
+      </div>
+    </div>
+    <div class="fg"><label class="fl">Địa điểm</label>
+      <input class="fi" id="edit-loc" placeholder="Tên sân · Quận/Huyện">
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Phí sân (đ)</label>
+        <input class="fi" id="edit-fee" type="number">
+      </div>
+      <div class="fg"><label class="fl">Số người tối đa</label>
+        <input class="fi" id="edit-max" type="number">
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button onclick="closeEditSheet({})"
+        style="flex:1;padding:13px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);
+        color:var(--muted);font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:600;cursor:pointer">
+        Huỷ
+      </button>
+      <button onclick="doEditSession()"
+        style="flex:2;padding:13px;border-radius:12px;background:var(--accent);border:none;
+        color:#080d00;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:700;cursor:pointer">
+        ✓ Lưu thay đổi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
      TRANG: THANH TOÁN
 ══════════════════════════════ -->
 <div class="page" id="pg-payment">
   <div class="hdr">
-    <div class="back-btn" onclick="goPage('pg-session')">←</div>
+    <div class="back-btn" onclick="stopPaymentRealtime();goPage('pg-session')">←</div>
     <div class="hdr-title">Thanh toán</div>
   </div>
   <div class="content">
@@ -595,6 +773,18 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
     </div>
     <div style="color:var(--muted);font-size:12px;margin-bottom:12px" id="pay-hint"></div>
     <div id="pay-list"></div>
+
+    <!-- Khách vãng lai payments -->
+    <div id="guest-pay-section" style="display:none">
+      <div class="sec" style="margin-top:20px">
+        <div class="sec-t" style="display:flex;align-items:center;gap:6px">
+          <span>👤</span> Khách vãng lai
+          <span style="background:rgba(255,107,71,.15);color:var(--accent3);border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700">Tiền mặt</span>
+        </div>
+      </div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Thanh toán tiền mặt trực tiếp — không tính vào quỹ</div>
+      <div id="guest-pay-list"></div>
+    </div>
   </div>
 </div>
 
@@ -622,6 +812,9 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
       style="background:rgba(167,139,250,.15);border:1px solid rgba(167,139,250,.35);color:#a78bfa;margin-bottom:20px">
       + Đóng quỹ
     </button>
+
+    <!-- Buổi đang nợ -->
+    <div id="fund-debt-list" style="display:none"></div>
 
     <!-- Lịch sử giao dịch của tôi -->
     <div class="sec"><div class="sec-t">Lịch sử giao dịch</div></div>
@@ -734,6 +927,34 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 </div>
 
 <!-- ══════════════════════════════
+     MODAL: CẢNH BÁO ÂM QUỸ
+══════════════════════════════ -->
+<div class="overlay" id="low-fund-overlay" style="z-index:600">
+  <div style="background:var(--bg2);border:1px solid rgba(239,68,68,.35);border-radius:20px;
+    padding:28px 24px;max-width:360px;width:90%;text-align:center;position:relative">
+    <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+    <div style="font-size:18px;font-weight:800;color:var(--red);margin-bottom:8px">Quỹ bị âm!</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">Số dư quỹ của bạn hiện tại:</div>
+    <div id="lf-amount" style="font-family:'Syne',sans-serif;font-size:36px;font-weight:800;
+      color:var(--red);margin-bottom:6px"></div>
+    <div id="lf-debt" style="font-size:12px;color:var(--muted);margin-bottom:24px"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="closeLowFundModal();goPage('pg-fund');openDepositSheet()"
+        style="width:100%;padding:14px;border-radius:14px;background:#a78bfa;border:none;
+        color:#0a0520;font-family:'Be Vietnam Pro',sans-serif;font-size:15px;font-weight:700;cursor:pointer">
+        🏦 Đóng quỹ ngay
+      </button>
+      <button onclick="closeLowFundModal()"
+        style="width:100%;padding:12px;border-radius:14px;background:var(--bg3);
+        border:1px solid var(--border);color:var(--muted);
+        font-family:'Be Vietnam Pro',sans-serif;font-size:14px;font-weight:600;cursor:pointer">
+        Để sau
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
      BOTTOM SHEET: XÁC NHẬN CHUYỂN KHOẢN
 ══════════════════════════════ -->
 <div class="sheet-bg" id="transfer-confirm-bg" onclick="closeTransferSheet(event)">
@@ -775,6 +996,8 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
   </div>
 </div>
 
+</div><!-- /desktop-main -->
+
 <script>
 // ═══════════════════════════════════════
 // INIT
@@ -802,8 +1025,14 @@ function init() {
           if (isPersisted) localStorage.setItem('cvUser', JSON.stringify(me));
           else sessionStorage.setItem('cvUser', JSON.stringify(me));
           document.getElementById('home-name').textContent = me.name;
+  updateBalanceDisplay(me.fund_balance || 0);
+  if (document.getElementById('sidebar-username')) document.getElementById('sidebar-username').textContent = me.name;
+  if (isDesktop()) initDesktopLayout();
           document.getElementById('admin-panel-btn').style.display = me.is_admin ? '' : 'none';
+          startAllRealtime();
           goPageDirect('pg-home');
+          loadHome();
+          setTimeout(checkAndShowLowFundAlert, 800);
         } else {
           localStorage.removeItem('cvUser');
           sessionStorage.removeItem('cvUser');
@@ -844,9 +1073,14 @@ async function quickLogin() {
     if (isPersisted) localStorage.setItem('cvUser', JSON.stringify(me));
     else sessionStorage.setItem('cvUser', JSON.stringify(me));
     document.getElementById('home-name').textContent = me.name;
+  updateBalanceDisplay(me.fund_balance || 0);
+  if (document.getElementById('sidebar-username')) document.getElementById('sidebar-username').textContent = me.name;
+  if (isDesktop()) initDesktopLayout();
     document.getElementById('admin-panel-btn').style.display = me.is_admin ? '' : 'none';
     toast(`Chào ${me.name}! 🏸`, 'ok');
+    startAllRealtime();
     goPage('pg-home');
+    setTimeout(checkAndShowLowFundAlert, 800);
   } else {
     localStorage.removeItem('cvUser');
     document.getElementById('quick-login-card').style.display = 'none';
@@ -864,6 +1098,7 @@ function showNewLogin() {
 function goPageDirect(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  if (isDesktop()) initDesktopLayout();
 }
 
 // ═══════════════════════════════════════
@@ -880,17 +1115,47 @@ function goPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
   window.scrollTo(0,0);
-  // Nav highlight
+  // Mobile bottom nav highlight
   const navMap = { 'pg-home':'home', 'pg-create':'create', 'pg-fund':'fund', 'pg-admin':'fund' };
   const active = navMap[id] || '';
   ['home','fund','create'].forEach(n => {
     document.getElementById('nav-'+n)?.classList.toggle('active', active===n);
     document.getElementById('nav-'+n+'2')?.classList.toggle('active', active===n);
+    document.getElementById('snav-'+n)?.classList.toggle('active', active===n);
   });
-  if (id === 'pg-home') loadHome();
+  // Hide/show sidebar on auth pages
+  const noSidebar = ['pg-auth','pg-splash'].includes(id);
+  const sidebar = document.getElementById('desktop-sidebar');
+  if (isDesktop()) {
+    sidebar.style.display = noSidebar ? 'none' : '';
+    document.getElementById('desktop-main').style.marginLeft = noSidebar ? '0' : '';
+  }
+  if (id === 'pg-home') { loadHome(); refreshBalance(); }
   if (id === 'pg-fund') loadFundPage();
   if (id === 'pg-admin') loadAdminPage();
 }
+
+function isDesktop() { return window.innerWidth >= 768; }
+
+function initDesktopLayout() {
+  if (!isDesktop()) return;
+  const sidebar = document.getElementById('desktop-sidebar');
+  sidebar.style.display = me ? '' : 'none';
+  document.getElementById('desktop-main').style.marginLeft = me ? 'var(--sidebar-w)' : '0';
+  if (me) {
+    document.getElementById('sidebar-username').textContent = me.name;
+    document.getElementById('snav-admin').style.display = me.is_admin ? '' : 'none';
+  }
+}
+
+window.addEventListener('resize', () => {
+  if (isDesktop()) {
+    initDesktopLayout();
+  } else {
+    document.getElementById('desktop-sidebar').style.display = 'none';
+    document.getElementById('desktop-main').style.marginLeft = '0';
+  }
+});
 
 function fmt(n) { return new Intl.NumberFormat('vi-VN').format(Math.round(n))+'đ'; }
 function fmtD(iso) {
@@ -931,11 +1196,16 @@ async function doEnter() {
     sessionStorage.setItem('cvUser', JSON.stringify(me)); // chỉ nhớ trong tab này
   }
   document.getElementById('home-name').textContent = me.name;
+  updateBalanceDisplay(me.fund_balance || 0);
+  if (document.getElementById('sidebar-username')) document.getElementById('sidebar-username').textContent = me.name;
+  if (isDesktop()) initDesktopLayout();
   // Hiện nút admin nếu là admin
   document.getElementById('admin-panel-btn').style.display = me.is_admin ? '' : 'none';
   load(false);
   toast(`Chào ${me.name}! 🏸`,'ok');
+  startAllRealtime();
   goPage('pg-home');
+  setTimeout(checkAndShowLowFundAlert, 800);
 }
 function doExit() {
   me = null;
@@ -945,8 +1215,94 @@ function doExit() {
 }
 
 // ═══════════════════════════════════════
-// HOME TABS
+// REALTIME — tất cả trang
 // ═══════════════════════════════════════
+let homeCh = null, fundCh = null, adminCh = null, paymentCh = null;
+let balancePollTimer = null;
+
+function isActive(pageId) {
+  return document.getElementById(pageId)?.classList.contains('active');
+}
+
+// Fetch số dư mới nhất và cập nhật hiển thị ngay
+async function refreshBalance() {
+  if (!me?.id || !db) return;
+  const { data: p } = await db.from('profiles').select('fund_balance').eq('id', me.id).single();
+  if (p && p.fund_balance !== me.fund_balance) {
+    me.fund_balance = p.fund_balance;
+    updateBalanceDisplay(me.fund_balance || 0);
+    localStorage.setItem('cvUser', JSON.stringify(me));
+    if (isActive('pg-fund')) loadFundPage();
+  }
+}
+
+function startBalancePoll() {
+  if (balancePollTimer) clearInterval(balancePollTimer);
+  balancePollTimer = setInterval(refreshBalance, 8000); // poll mỗi 8 giây
+}
+
+function startAllRealtime() {
+  // ── HOME: sessions thay đổi ──
+  if (homeCh) db.removeChannel(homeCh);
+  homeCh = db.channel('rt-home')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' }, () => {
+      if (isActive('pg-home')) loadHome();
+    })
+    .subscribe();
+
+  // ── FUND: không dùng filter (không đáng tin) — dùng poll + navigate-fetch ──
+  if (fundCh) db.removeChannel(fundCh);
+  fundCh = db.channel('rt-fund')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'fund_transactions' }, async () => {
+      await refreshBalance();
+      if (isActive('pg-fund')) loadFundPage();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, async (pl) => {
+      if (pl.new?.id === me.id) {
+        me.fund_balance = pl.new.fund_balance;
+        updateBalanceDisplay(me.fund_balance || 0);
+        localStorage.setItem('cvUser', JSON.stringify(me));
+        if (isActive('pg-fund')) loadFundPage();
+      }
+    })
+    .subscribe();
+
+  // ── ADMIN: fund_transactions & profiles ──
+  if (adminCh) db.removeChannel(adminCh);
+  adminCh = db.channel('rt-admin')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'fund_transactions' }, () => {
+      if (isActive('pg-admin')) loadAdminPage();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+      if (isActive('pg-admin')) loadAdminPage();
+    })
+    .subscribe();
+
+  // Bắt đầu poll số dư
+  startBalancePoll();
+
+  // ── PAYMENT: payments & guest_payments (session hiện tại) ──
+  // startPaymentRealtime() được gọi riêng khi mở trang payment
+}
+
+function startPaymentRealtime(sessionId) {
+  if (paymentCh) db.removeChannel(paymentCh);
+  paymentCh = db.channel('rt-payment-' + sessionId)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'payments',
+        filter: `session_id=eq.${sessionId}` }, () => {
+      if (isActive('pg-payment')) openPayment(false, false);
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_payments',
+        filter: `session_id=eq.${sessionId}` }, () => {
+      if (isActive('pg-payment')) openPayment(false, false);
+    })
+    .subscribe();
+}
+
+function stopPaymentRealtime() {
+  if (paymentCh) { db.removeChannel(paymentCh); paymentCh = null; }
+}
+
 function switchHomeTab(tab) {
   homeTab = tab;
   document.getElementById('tab-open').classList.toggle('active', tab==='open');
@@ -1036,10 +1392,11 @@ async function doCreate() {
 // ═══════════════════════════════════════
 async function openSession(sid) {
   load(true);
-  const [{ data: session }, { data: members }, { data: votes }] = await Promise.all([
+  const [{ data: session }, { data: members }, { data: votes }, { data: guests }] = await Promise.all([
     db.from('sessions').select('*, profiles!host_id(name)').eq('id',sid).single(),
     db.from('session_members').select('user_id, profiles(id,name)').eq('session_id',sid),
-    db.from('votes').select('*').eq('session_id',sid)
+    db.from('votes').select('*').eq('session_id',sid),
+    db.from('session_guests').select('*').eq('session_id',sid).order('created_at')
   ]);
 
   // Tự động join nếu chưa là thành viên và buổi đang mở
@@ -1048,9 +1405,9 @@ async function openSession(sid) {
     await db.from('session_members').upsert({session_id:sid, user_id:me.id},{onConflict:'session_id,user_id'});
     // reload members
     const { data: m2 } = await db.from('session_members').select('user_id, profiles(id,name)').eq('session_id',sid);
-    curSession = { session, members: m2||[], votes: votes||[] };
+    curSession = { session, members: m2||[], votes: votes||[], guests: guests||[] };
   } else {
-    curSession = { session, members: members||[], votes: votes||[] };
+    curSession = { session, members: members||[], votes: votes||[], guests: guests||[] };
   }
 
   load(false);
@@ -1059,26 +1416,35 @@ async function openSession(sid) {
   renderSession();
   goPage('pg-session');
 
-  // Realtime
+  // Realtime — cập nhật state trực tiếp, không re-fetch
   if (rtCh) db.removeChannel(rtCh);
   rtCh = db.channel('s-'+sid)
-    .on('postgres_changes',{event:'*',schema:'public',table:'votes',filter:`session_id=eq.${sid}`}, async () => {
-      const {data:v} = await db.from('votes').select('*').eq('session_id',sid);
-      curSession.votes = v||[];
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'votes',filter:`session_id=eq.${sid}`}, (pl) => {
+      if (!curSession.votes.find(v => v.id === pl.new.id))
+        curSession.votes.push(pl.new);
       renderSession();
-      toast('Có vote mới! 🏸');
+    })
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'votes',filter:`session_id=eq.${sid}`}, (pl) => {
+      curSession.votes = curSession.votes.filter(v => v.id !== pl.old.id);
+      renderSession();
     })
     .on('postgres_changes',{event:'INSERT',schema:'public',table:'session_members',filter:`session_id=eq.${sid}`}, async (pl) => {
+      if (curSession.members.find(x => x.user_id === pl.new.user_id)) return;
       const {data:m} = await db.from('session_members').select('user_id, profiles(id,name)').eq('id',pl.new.id).single();
-      if (m && !curSession.members.find(x=>x.user_id===m.user_id)) {
-        curSession.members.push(m);
-        renderSession();
-        toast(`${m.profiles?.name} vừa tham gia!`);
-      }
+      if (m) { curSession.members.push(m); renderSession(); }
     })
-    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'sessions',filter:`id=eq.${sid}`}, async () => {
-      const {data:s} = await db.from('sessions').select('*, profiles!host_id(name)').eq('id',sid).single();
-      curSession.session = s;
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'sessions',filter:`id=eq.${sid}`}, (pl) => {
+      // Giữ lại profiles join (realtime không trả về nested join)
+      curSession.session = { ...curSession.session, ...pl.new, profiles: curSession.session.profiles };
+      renderSession();
+    })
+    .on('postgres_changes',{event:'INSERT',schema:'public',table:'session_guests',filter:`session_id=eq.${sid}`}, (pl) => {
+      if (!curSession.guests.find(g => g.id === pl.new.id))
+        curSession.guests.push(pl.new);
+      renderSession();
+    })
+    .on('postgres_changes',{event:'DELETE',schema:'public',table:'session_guests',filter:`session_id=eq.${sid}`}, (pl) => {
+      curSession.guests = curSession.guests.filter(g => g.id !== pl.old.id);
       renderSession();
     })
     .subscribe();
@@ -1120,9 +1486,8 @@ function renderSession() {
   badge.className   = 'badge ' + (isClosed ? 'bc' : 'bv');
   badge.textContent = isClosed ? 'Đã khóa' : 'Đang mở';
 
-  document.getElementById('sharebox').style.display          = isHost && !isClosed ? '' : 'none';
-  document.getElementById('share-code').textContent          = session.code;
   document.getElementById('host-close-btn').style.display    = isHost && !isClosed ? '' : 'none';
+  document.getElementById('host-edit-btn').style.display     = isHost && !isClosed ? '' : 'none';
 
   // Ai đã tự xác nhận tham gia (voter_id = target_id)
   const confirmedIds = new Set(
@@ -1132,6 +1497,11 @@ function renderSession() {
   const confirmedCount = confirmedIds.size;
 
   document.getElementById('voted-count-badge').textContent = confirmedCount || '';
+
+  // ── Guest management (host only, khi buổi đang mở) ──
+  const guestWrap = document.getElementById('guest-mgmt-wrap');
+  guestWrap.style.display = isHost ? '' : 'none';
+  renderGuestList();
 
   // ── TAB: Bình chọn ──
   document.getElementById('s-hint').textContent = isClosed
@@ -1242,11 +1612,133 @@ async function doVote() {
 }
 
 // ═══════════════════════════════════════
+// CHỈNH SỬA BUỔI (host only)
+// ═══════════════════════════════════════
+function openEditSheet() {
+  const { session } = curSession;
+  document.getElementById('edit-title').value = session.title || '';
+  document.getElementById('edit-loc').value   = session.location || '';
+  document.getElementById('edit-fee').value   = session.court_fee || '';
+  document.getElementById('edit-max').value   = session.max_players || 10;
+
+  if (session.scheduled_at) {
+    const d = new Date(session.scheduled_at);
+    const pad = n => String(n).padStart(2,'0');
+    document.getElementById('edit-date').value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    document.getElementById('edit-time').value = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } else {
+    document.getElementById('edit-date').value = '';
+    document.getElementById('edit-time').value = '';
+  }
+  document.getElementById('edit-session-bg').classList.add('show');
+}
+
+function closeEditSheet(e) {
+  if (!e || !e.target || e.target === document.getElementById('edit-session-bg'))
+    document.getElementById('edit-session-bg').classList.remove('show');
+}
+
+async function doEditSession() {
+  const title = document.getElementById('edit-title').value.trim();
+  const loc   = document.getElementById('edit-loc').value.trim();
+  const fee   = parseFloat(document.getElementById('edit-fee').value) || 0;
+  const max   = parseInt(document.getElementById('edit-max').value) || 10;
+  const date  = document.getElementById('edit-date').value;
+  const time  = document.getElementById('edit-time').value;
+  if (!title) return toast('Nhập tên buổi', 'err');
+
+  const scheduled_at = date && time ? new Date(`${date}T${time}`).toISOString() : null;
+
+  load(true);
+  const { error } = await db.from('sessions').update({
+    title, location: loc, court_fee: fee, max_players: max, scheduled_at
+  }).eq('id', curSession.session.id);
+  load(false);
+
+  if (error) return toast(error.message, 'err');
+
+  // Cập nhật local state ngay
+  curSession.session = { ...curSession.session, title, location: loc, court_fee: fee, max_players: max, scheduled_at };
+  closeEditSheet({});
+  toast('✓ Đã cập nhật thông tin buổi', 'ok');
+  renderSession();
+}
+
+// ═══════════════════════════════════════
+// GUESTS — thành viên vãng lai
+// ═══════════════════════════════════════
+function renderGuestList() {
+  const guests  = curSession.guests || [];
+  const isClosed = curSession.session.status === 'closed';
+  const isHost   = curSession.session.host_id === me.id;
+
+  // Badge count
+  document.getElementById('guest-count-badge').textContent = guests.length || '';
+
+  // Toggle button
+  const toggleBtn = document.getElementById('toggle-guest-btn');
+  if (toggleBtn) toggleBtn.style.display = isClosed ? 'none' : '';
+
+  const el = document.getElementById('guest-list');
+  if (!guests.length) {
+    el.innerHTML = `<div style="color:var(--muted);font-size:12px;padding:6px 0">Chưa có khách vãng lai nào</div>`;
+    return;
+  }
+  el.innerHTML = guests.map(g => `
+    <div class="guest-row">
+      <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,107,71,.25);
+        display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--accent3);flex-shrink:0">
+        ${initials(g.name)}
+      </div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:600">${g.name}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Khách vãng lai · Tiền mặt</div>
+      </div>
+      <span class="guest-badge">Khách</span>
+      ${isHost && !isClosed ? `
+        <button onclick="removeGuest('${g.id}')"
+          style="background:none;border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:8px;
+          padding:4px 9px;font-size:12px;cursor:pointer;flex-shrink:0">✕</button>` : ''}
+    </div>`).join('');
+}
+
+function toggleGuestForm() {
+  const form = document.getElementById('add-guest-form');
+  const btn  = document.getElementById('toggle-guest-btn');
+  const showing = form.style.display !== 'none';
+  form.style.display = showing ? 'none' : '';
+  btn.textContent = showing ? '+ Thêm khách vãng lai' : '✕ Đóng';
+  if (!showing) setTimeout(() => document.getElementById('guest-name-input').focus(), 100);
+}
+
+async function addGuest() {
+  const name = document.getElementById('guest-name-input').value.trim();
+  if (!name) return toast('Nhập tên khách', 'err');
+  const sid = curSession.session.id;
+  const { data: guest, error } = await db.from('session_guests').insert({ session_id: sid, name }).select().single();
+  if (error) return toast(error.message, 'err');
+  curSession.guests = [...(curSession.guests||[]), guest];
+  document.getElementById('guest-name-input').value = '';
+  renderGuestList();
+  toast(`✓ Đã thêm ${name}`, 'ok');
+}
+
+async function removeGuest(gid) {
+  if (!confirm('Xoá khách này khỏi buổi?')) return;
+  await db.from('session_guests').delete().eq('id', gid);
+  curSession.guests = (curSession.guests||[]).filter(g => g.id !== gid);
+  renderGuestList();
+  toast('Đã xoá khách');
+}
+
+// ═══════════════════════════════════════
 // EXPENSES
 // ═══════════════════════════════════════
 let expSplitType = 'all';
-let expPickedIds = new Set();  // cho 'selected'
-let expPersonal  = {};         // uid -> amount cho 'personal'
+let expPickedIds = new Set();      // uid cho 'selected' (thành viên)
+let expPersonal  = {};             // uid -> amount cho 'personal'
+let expPickedGuestIds = new Set(); // guest id cho 'selected'
+let expPersonalGuest  = {};        // gid -> amount cho 'personal'
 
 async function renderExpenses() {
   const { session, members } = curSession;
@@ -1255,9 +1747,10 @@ async function renderExpenses() {
 
   document.getElementById('exp-host-add').style.display = isHost && !isClosed ? '' : 'none';
 
-  // Load expenses + assignments
+  // Load expenses + assignments (cả member và guest)
   const { data: expenses } = await db.from('expenses')
-    .select('*, expense_assignments(user_id, amount)').eq('session_id', session.id)
+    .select('*, expense_assignments(user_id, amount), guest_expense_assignments(guest_id, amount)')
+    .eq('session_id', session.id)
     .order('created_at');
 
   const expList = document.getElementById('exp-list');
@@ -1279,22 +1772,35 @@ async function renderExpenses() {
     const cls   = e.split_type === 'all' ? 'exp-all' : e.split_type === 'selected' ? 'exp-sel' : 'exp-pers';
     const bCls  = e.split_type === 'all' ? 'exp-badge-all' : e.split_type === 'selected' ? 'exp-badge-sel' : 'exp-badge-pers';
     const label = e.split_type === 'all' ? '🌐 Chia đều' : e.split_type === 'selected' ? '👥 Chia chọn' : '🎯 Gán riêng';
-    const assigns = e.expense_assignments || [];
+    const assigns      = e.expense_assignments || [];
+    const guestAssigns = e.guest_expense_assignments || [];
+    const guests       = curSession.guests || [];
     const assignedNames = assigns.map(a => {
       const m = members.find(x => x.user_id === a.user_id);
       return m?.profiles?.name || '?';
     });
+    const guestAssignedNames = guestAssigns.map(a => {
+      const g = guests.find(x => x.id === a.guest_id);
+      return (g?.name || '?') + ' 👤';
+    });
 
     let subInfo = '';
     if (e.split_type === 'all') {
-      subInfo = `Chia cho tất cả người tham gia`;
+      const totalPpl = (curSession.guests||[]).length;
+      subInfo = `Chia cho tất cả người tham gia${totalPpl > 0 ? ` (gồm ${totalPpl} khách)` : ''}`;
     } else if (e.split_type === 'selected') {
-      subInfo = assigns.length ? `Chia cho: ${assignedNames.join(', ')}` : 'Chưa chọn thành viên';
+      const allNames = [...assignedNames, ...guestAssignedNames];
+      subInfo = allNames.length ? `Chia cho: ${allNames.join(', ')}` : 'Chưa chọn thành viên';
     } else {
-      subInfo = assigns.map(a => {
+      const memberParts = assigns.map(a => {
         const m = members.find(x => x.user_id === a.user_id);
         return `${m?.profiles?.name||'?'}: ${fmt(a.amount)}`;
-      }).join(' · ') || 'Chưa gán';
+      });
+      const guestParts = guestAssigns.map(a => {
+        const g = guests.find(x => x.id === a.guest_id);
+        return `${g?.name||'?'} 👤: ${fmt(a.amount)}`;
+      });
+      subInfo = [...memberParts, ...guestParts].join(' · ') || 'Chưa gán';
     }
 
     return `
@@ -1319,35 +1825,43 @@ async function renderExpenses() {
 }
 
 function renderExpSummary(expenses, members, session) {
-  // Confirming who's in (use votes)
   const confirmedIds = new Set(
     (curSession.votes||[]).filter(v => v.voter_id === v.target_id).map(v => v.voter_id)
   );
   const inMembers = members.filter(m => confirmedIds.has(m.user_id));
-  if (!inMembers.length) return '';
+  const guests    = curSession.guests || [];
+  const totalPpl  = inMembers.length + guests.length;
+  if (!totalPpl) return '';
 
-  // Per-member breakdown preview
+  // Per-member totals
   const totals = {};
-  inMembers.forEach(m => { totals[m.user_id] = 0; });
+  inMembers.forEach(m => { totals['m_'+m.user_id] = 0; });
+  guests.forEach(g    => { totals['g_'+g.id]       = 0; });
 
   expenses.forEach(e => {
-    const assigns = e.expense_assignments || [];
+    const assigns      = e.expense_assignments || [];
+    const guestAssigns = e.guest_expense_assignments || [];
     if (e.split_type === 'all') {
-      const share = e.amount / inMembers.length;
-      inMembers.forEach(m => { totals[m.user_id] = (totals[m.user_id]||0) + share; });
+      const share = e.amount / totalPpl;
+      inMembers.forEach(m => { totals['m_'+m.user_id] += share; });
+      guests.forEach(g    => { totals['g_'+g.id]       += share; });
     } else if (e.split_type === 'selected') {
-      if (assigns.length) {
-        const share = e.amount / assigns.length;
-        assigns.forEach(a => { if (totals[a.user_id] !== undefined) totals[a.user_id] += share; });
+      const totalSel = assigns.length + guestAssigns.length;
+      if (totalSel) {
+        const share = e.amount / totalSel;
+        assigns.forEach(a      => { if (totals['m_'+a.user_id] !== undefined) totals['m_'+a.user_id] += share; });
+        guestAssigns.forEach(a => { if (totals['g_'+a.guest_id] !== undefined) totals['g_'+a.guest_id] += share; });
       }
     } else {
-      assigns.forEach(a => { if (totals[a.user_id] !== undefined) totals[a.user_id] += a.amount; });
+      assigns.forEach(a      => { if (totals['m_'+a.user_id]  !== undefined) totals['m_'+a.user_id]  += a.amount; });
+      guestAssigns.forEach(a => { if (totals['g_'+a.guest_id] !== undefined) totals['g_'+a.guest_id] += a.amount; });
     }
   });
 
-  const courtShare = session.court_fee / inMembers.length;
-  const rows = inMembers.map(m => {
-    const extra = totals[m.user_id] || 0;
+  const courtShare = session.court_fee / totalPpl;
+
+  const memberRows = inMembers.map(m => {
+    const extra = totals['m_'+m.user_id] || 0;
     const total = courtShare + extra;
     return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
       <div class="av" style="background:${ac(m.user_id)};width:32px;height:32px;font-size:11px">${initials(m.profiles?.name||'?')}</div>
@@ -1359,9 +1873,25 @@ function renderExpSummary(expenses, members, session) {
     </div>`;
   }).join('');
 
+  const guestRows = guests.map(g => {
+    const extra = totals['g_'+g.id] || 0;
+    const total = courtShare + extra;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,107,71,.12)">
+      <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,107,71,.2);
+        display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent3);flex-shrink:0">${initials(g.name)}</div>
+      <div style="flex:1;font-size:13px;font-weight:600">${g.name} <span class="guest-badge" style="font-size:8px">Khách</span></div>
+      <div style="text-align:right">
+        <div style="font-size:14px;font-weight:700;color:var(--accent3)">${fmt(Math.ceil(total))}</div>
+        ${extra > 0 ? `<div style="font-size:10px;color:var(--muted)">${fmt(Math.ceil(courtShare))} + ${fmt(Math.ceil(extra))}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
   return `<div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-top:12px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">Dự kiến mỗi người trả (nếu tất cả tham gia)</div>
-    ${rows}
+    <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--muted)">Dự kiến mỗi người trả</div>
+    ${memberRows}
+    ${guestRows}
+    ${guests.length ? `<div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:6px;border-top:1px solid var(--border)">👤 Khách vãng lai thu tiền mặt — không tính vào quỹ</div>` : ''}
   </div>`;
 }
 
@@ -1380,8 +1910,10 @@ let sheetEditId = null;
 function openExpenseSheet() {
   sheetEditId = null;
   expSplitType = 'all';
-  expPickedIds = new Set();
-  expPersonal  = {};
+  expPickedIds      = new Set();
+  expPersonal       = {};
+  expPickedGuestIds = new Set();
+  expPersonalGuest  = {};
   document.getElementById('exp-name').value   = '';
   document.getElementById('exp-amount').value = '';
   setSplitType('all');
@@ -1411,14 +1943,15 @@ function setSplitType(type) {
 
 function renderMemberPicker() {
   const { members } = curSession;
+  const guests = curSession.guests || [];
   const confirmedIds = new Set(
     (curSession.votes||[]).filter(v => v.voter_id === v.target_id).map(v => v.voter_id)
   );
   const pool = members.filter(m => confirmedIds.has(m.user_id));
 
-  document.getElementById('member-picker').innerHTML = pool.map(m => {
-    const uid   = m.user_id;
-    const name  = m.profiles?.name || '?';
+  const memberRows = pool.map(m => {
+    const uid      = m.user_id;
+    const name     = m.profiles?.name || '?';
     const isPicked = expPickedIds.has(uid);
     if (expSplitType === 'selected') {
       return `<div class="mpick-row ${isPicked?'picked':''}" onclick="togglePick('${uid}')">
@@ -1426,7 +1959,6 @@ function renderMemberPicker() {
         <div style="flex:1;font-size:14px;font-weight:600">${name}</div>
       </div>`;
     } else {
-      // personal: show amount input per person
       const val = expPersonal[uid] || '';
       return `<div class="mpick-row" style="cursor:default">
         <div class="av" style="background:${ac(uid)};width:32px;height:32px;font-size:11px;flex-shrink:0">${initials(name)}</div>
@@ -1435,12 +1967,50 @@ function renderMemberPicker() {
           oninput="expPersonal['${uid}']=parseFloat(this.value)||0" onclick="event.stopPropagation()">
       </div>`;
     }
-  }).join('') || '<div style="color:var(--muted);font-size:13px;padding:10px 0">Chưa có ai xác nhận tham gia</div>';
+  }).join('');
+
+  const guestRows = guests.map(g => {
+    const gid      = g.id;
+    const name     = g.name;
+    const isPicked = expPickedGuestIds.has(gid);
+    if (expSplitType === 'selected') {
+      return `<div class="mpick-row ${isPicked?'picked':''}" onclick="togglePickGuest('${gid}')"
+        style="${isPicked ? 'border-color:rgba(255,107,71,.4);background:rgba(255,107,71,.06)' : ''}">
+        <div class="mpick-check" style="${isPicked ? 'background:var(--accent3);border-color:var(--accent3);color:#fff' : ''}">${isPicked?'✓':''}</div>
+        <div style="flex:1;font-size:14px;font-weight:600">${name}</div>
+        <span class="guest-badge">Khách</span>
+      </div>`;
+    } else {
+      const val = expPersonalGuest[gid] || '';
+      return `<div class="mpick-row" style="cursor:default;border-color:rgba(255,107,71,.2)">
+        <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,107,71,.2);
+          display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--accent3);flex-shrink:0">${initials(name)}</div>
+        <div style="flex:1;font-size:14px;font-weight:600">${name} <span class="guest-badge" style="font-size:8px">Khách</span></div>
+        <input class="amount-mini" type="number" placeholder="0" value="${val}"
+          oninput="expPersonalGuest['${gid}']=parseFloat(this.value)||0" onclick="event.stopPropagation()">
+      </div>`;
+    }
+  }).join('');
+
+  const divider = guests.length && pool.length
+    ? `<div style="font-size:10px;color:var(--muted);padding:6px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.4px">👤 Khách vãng lai</div>`
+    : '';
+
+  document.getElementById('member-picker').innerHTML =
+    (memberRows || '') +
+    (guests.length ? divider + guestRows : '') ||
+    '<div style="color:var(--muted);font-size:13px;padding:10px 0">Chưa có ai trong buổi</div>';
 }
 
 function togglePick(uid) {
   if (expPickedIds.has(uid)) expPickedIds.delete(uid);
   else expPickedIds.add(uid);
+  renderMemberPicker();
+}
+
+function togglePickGuest(gid) {
+  if (expPickedGuestIds.has(gid)) expPickedGuestIds.delete(gid);
+  else expPickedGuestIds.add(gid);
   renderMemberPicker();
 }
 
@@ -1450,8 +2020,8 @@ async function saveExpense() {
   if (!name)   return toast('Nhập tên khoản', 'err');
   if (!amount) return toast('Nhập số tiền', 'err');
 
-  if (expSplitType === 'selected' && expPickedIds.size === 0)
-    return toast('Chọn ít nhất 1 thành viên', 'err');
+  if (expSplitType === 'selected' && expPickedIds.size === 0 && expPickedGuestIds.size === 0)
+    return toast('Chọn ít nhất 1 thành viên hoặc khách', 'err');
 
   load(true);
   const { data: expense, error } = await db.from('expenses').insert({
@@ -1460,17 +2030,27 @@ async function saveExpense() {
   }).select().single();
   if (error) { load(false); return toast(error.message, 'err'); }
 
-  // Ghi assignments
+  // Ghi member assignments
   if (expSplitType === 'selected') {
-    await db.from('expense_assignments').insert(
-      [...expPickedIds].map(uid => ({ expense_id: expense.id, user_id: uid, amount: 0 }))
-    );
+    if (expPickedIds.size)
+      await db.from('expense_assignments').insert(
+        [...expPickedIds].map(uid => ({ expense_id: expense.id, user_id: uid, amount: 0 }))
+      );
+    if (expPickedGuestIds.size)
+      await db.from('guest_expense_assignments').insert(
+        [...expPickedGuestIds].map(gid => ({ expense_id: expense.id, guest_id: gid, amount: 0 }))
+      );
   } else if (expSplitType === 'personal') {
     const { members } = curSession;
-    const entries = members
+    const guests = curSession.guests || [];
+    const memberEntries = members
       .filter(m => expPersonal[m.user_id] > 0)
       .map(m => ({ expense_id: expense.id, user_id: m.user_id, amount: expPersonal[m.user_id] }));
-    if (entries.length) await db.from('expense_assignments').insert(entries);
+    const guestEntries = guests
+      .filter(g => expPersonalGuest[g.id] > 0)
+      .map(g => ({ expense_id: expense.id, guest_id: g.id, amount: expPersonalGuest[g.id] }));
+    if (memberEntries.length) await db.from('expense_assignments').insert(memberEntries);
+    if (guestEntries.length)  await db.from('guest_expense_assignments').insert(guestEntries);
   }
 
   load(false);
@@ -1484,13 +2064,16 @@ async function saveExpense() {
 // ═══════════════════════════════════════
 async function doClose() {
   const { session, votes, members } = curSession;
+  const guests = curSession.guests || [];
   const confirmedIds = new Set(
     votes.filter(v => v.voter_id === v.target_id).map(v => v.voter_id)
   );
   const confirmedCount = confirmedIds.size;
+  const totalCount = confirmedCount + guests.length;
+
   if (!confirm(
     `Khóa buổi?\n\n` +
-    `${confirmedCount} người đã xác nhận tham gia.\n` +
+    `${confirmedCount} thành viên + ${guests.length} khách vãng lai (tổng ${totalCount} người).\n` +
     (confirmedCount > session.max_players
       ? `Quá ${session.max_players} người — sẽ lấy ${session.max_players} người xác nhận sớm nhất.\n\n`
       : '\n') +
@@ -1498,7 +2081,7 @@ async function doClose() {
   )) return;
   load(true);
 
-  // Lấy danh sách người tham gia
+  // Lấy danh sách thành viên tham gia
   const selfVotes = votes
     .filter(v => v.voter_id === v.target_id)
     .sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
@@ -1509,42 +2092,54 @@ async function doClose() {
   if (!pickedUids.has(session.host_id)) pickedUids.add(session.host_id);
   const picked = members.filter(m => pickedUids.has(m.user_id));
 
+  // Tổng người = thành viên + khách
+  const totalPpl = picked.length + guests.length;
+
   // Load expenses + assignments
   const { data: expenses } = await db.from('expenses')
-    .select('*, expense_assignments(user_id, amount)')
+    .select('*, expense_assignments(user_id, amount), guest_expense_assignments(guest_id, amount)')
     .eq('session_id', session.id);
 
-  // Tính tiền từng người
-  const courtBase = session.court_fee / picked.length;
+  // Tính tiền từng người (chia phí sân cho cả khách)
+  const courtBase = session.court_fee / totalPpl;
   const extraMap  = {};
-  picked.forEach(m => { extraMap[m.user_id] = []; });
+  picked.forEach(m  => { extraMap['m_'+m.user_id] = []; });
+  guests.forEach(g  => { extraMap['g_'+g.id]       = []; });
 
   (expenses||[]).forEach(e => {
-    const assigns = e.expense_assignments || [];
+    const assigns      = e.expense_assignments || [];
+    const guestAssigns = e.guest_expense_assignments || [];
     if (e.split_type === 'all') {
-      const share = e.amount / picked.length;
-      picked.forEach(m => extraMap[m.user_id].push({ name: e.name, amount: share }));
+      const share = e.amount / totalPpl;
+      picked.forEach(m  => extraMap['m_'+m.user_id].push({ name: e.name, amount: share }));
+      guests.forEach(g  => extraMap['g_'+g.id].push({ name: e.name, amount: share }));
     } else if (e.split_type === 'selected') {
-      const targets = assigns.filter(a => pickedUids.has(a.user_id));
-      if (targets.length) {
-        const share = e.amount / targets.length;
-        targets.forEach(a => {
-          if (extraMap[a.user_id]) extraMap[a.user_id].push({ name: e.name, amount: share });
+      const totalSel = assigns.length + guestAssigns.length;
+      if (totalSel) {
+        const share = e.amount / totalSel;
+        assigns.forEach(a => {
+          if (extraMap['m_'+a.user_id]) extraMap['m_'+a.user_id].push({ name: e.name, amount: share });
+        });
+        guestAssigns.forEach(a => {
+          if (extraMap['g_'+a.guest_id]) extraMap['g_'+a.guest_id].push({ name: e.name, amount: share });
         });
       }
     } else {
       assigns.forEach(a => {
-        if (extraMap[a.user_id]) extraMap[a.user_id].push({ name: e.name, amount: a.amount });
+        if (extraMap['m_'+a.user_id]) extraMap['m_'+a.user_id].push({ name: e.name, amount: a.amount });
+      });
+      guestAssigns.forEach(a => {
+        if (extraMap['g_'+a.guest_id]) extraMap['g_'+a.guest_id].push({ name: e.name, amount: a.amount });
       });
     }
   });
 
-  // Upsert payments với breakdown
+  // Upsert member payments
   await db.from('payments').upsert(
     picked.map(m => {
-      const extras    = extraMap[m.user_id] || [];
-      const extraSum  = extras.reduce((s,x) => s+x.amount, 0);
-      const total     = Math.ceil(courtBase + extraSum);
+      const extras   = extraMap['m_'+m.user_id] || [];
+      const extraSum = extras.reduce((s,x) => s+x.amount, 0);
+      const total    = Math.ceil(courtBase + extraSum);
       const breakdown = [
         { name: 'Phí sân', amount: Math.ceil(courtBase) },
         ...extras.map(x => ({ name: x.name, amount: Math.ceil(x.amount) }))
@@ -1554,13 +2149,91 @@ async function doClose() {
     { onConflict: 'session_id,user_id' }
   );
 
+  // Upsert guest payments (không liên quan quỹ)
+  if (guests.length) {
+    await db.from('guest_payments').upsert(
+      guests.map(g => {
+        const extras   = extraMap['g_'+g.id] || [];
+        const extraSum = extras.reduce((s,x) => s+x.amount, 0);
+        const total    = Math.ceil(courtBase + extraSum);
+        const breakdown = [
+          { name: 'Phí sân', amount: Math.ceil(courtBase) },
+          ...extras.map(x => ({ name: x.name, amount: Math.ceil(x.amount) }))
+        ];
+        return { session_id: session.id, guest_id: g.id, amount: total, breakdown, is_paid: false };
+      }),
+      { onConflict: 'session_id,guest_id' }
+    );
+  }
+
   await db.from('sessions').update({ status: 'closed' }).eq('id', session.id);
   curSession.session.status = 'closed';
+
+  // ── Tự động trừ quỹ cho từng thành viên (kể cả âm quỹ) ──
+  const autoDeductResults = await autoDeductFundForSession(picked, session);
+
+  // Cập nhật số dư hiển thị ngay lập tức, không chờ realtime
+  if (autoDeductResults.newBalForMe !== null) {
+    me.fund_balance = autoDeductResults.newBalForMe;
+    updateBalanceDisplay(me.fund_balance);
+    localStorage.setItem('cvUser', JSON.stringify(me));
+  }
+
   load(false);
-  toast(`Đã khóa! ${picked.length} người tham gia`, 'ok');
+  const autoMsg = autoDeductResults.deducted > 0
+    ? ` · Đã tự trừ quỹ ${autoDeductResults.deducted} người` : '';
+  toast(`Đã khóa! ${picked.length} thành viên + ${guests.length} khách${autoMsg}`, 'ok');
   renderSession();
-  // Mở trang thanh toán
   setTimeout(() => openPayment(true), 600);
+}
+
+// Tự động trừ quỹ sau khi khóa buổi
+async function autoDeductFundForSession(picked, session) {
+  // Load payments vừa tạo + số dư quỹ của từng người
+  const { data: payments } = await db.from('payments')
+    .select('id, user_id, amount').eq('session_id', session.id).eq('is_paid', false);
+  if (!payments?.length) return { deducted: 0 };
+
+  const userIds = payments.map(p => p.user_id);
+  const { data: profiles } = await db.from('profiles')
+    .select('id, fund_balance').in('id', userIds);
+
+  const balMap = {};
+  (profiles||[]).forEach(p => { balMap[p.id] = p.fund_balance || 0; });
+
+  let deducted = 0;
+  let newBalForMe = null;
+  for (const pay of payments) {
+    const bal    = balMap[pay.user_id] || 0;
+    const newBal = bal - pay.amount;  // có thể âm
+
+    // Cập nhật số dư (kể cả âm)
+    await db.from('profiles').update({ fund_balance: newBal }).eq('id', pay.user_id);
+
+    // Ghi fund_transaction
+    await db.from('fund_transactions').insert({
+      user_id:     pay.user_id,
+      amount:      -pay.amount,
+      type:        'deduction',
+      description: `Tự động trừ: ${session.title}`,
+      session_id:  session.id,
+      status:      'confirmed',
+      confirmed_by: session.host_id,
+      confirmed_at: new Date().toISOString()
+    });
+
+    // Đánh dấu đã thanh toán qua quỹ
+    await db.from('payments').update({
+      is_paid:    true,
+      paid_method: 'fund',
+      paid_at:    new Date().toISOString()
+    }).eq('id', pay.id);
+
+    // Lưu số dư mới của user hiện tại
+    if (pay.user_id === me.id) newBalForMe = newBal;
+    deducted++;
+  }
+  return { deducted, newBalForMe };
 }
 
 // ═══════════════════════════════════════
@@ -1568,11 +2241,13 @@ async function doClose() {
 // Mỗi người tự bấm đã trả + upload hóa đơn của mình
 // Host xem tất cả + có thể xác nhận thủ công
 // ═══════════════════════════════════════
-async function openPayment(promptUpload = false) {
+async function openPayment(promptUpload = false, navigateTo = true) {
   const { session } = curSession;
   load(true);
-  const { data: payments } = await db.from('payments')
-    .select('*, profiles!user_id(id,name)').eq('session_id', session.id);
+  const [{ data: payments }, { data: guestPayments }] = await Promise.all([
+    db.from('payments').select('*, profiles!user_id(id,name)').eq('session_id', session.id),
+    db.from('guest_payments').select('*, session_guests(id,name)').eq('session_id', session.id)
+  ]);
   load(false);
 
   const paidCnt    = payments?.filter(p => p.is_paid).length || 0;
@@ -1582,9 +2257,9 @@ async function openPayment(promptUpload = false) {
 
   const heroAmt = myPay?.amount || (payments?.[0]?.amount || 0);
   document.getElementById('pay-pp').textContent    = fmt(heroAmt);
-  document.getElementById('pay-sub').textContent   = `${session.title} · ${payments?.length||0} người`;
+  document.getElementById('pay-sub').textContent   = `${session.title} · ${(payments?.length||0) + (guestPayments?.length||0)} người`;
   document.getElementById('pay-total').textContent = fmt(session.court_fee);
-  document.getElementById('pay-n').textContent     = payments?.length || 0;
+  document.getElementById('pay-n').textContent     = (payments?.length||0) + (guestPayments?.length||0);
   document.getElementById('pay-done').textContent  = pendingCnt > 0
     ? `${paidCnt}/${payments?.length||0} · ${pendingCnt} chờ duyệt`
     : `${paidCnt}/${payments?.length||0}`;
@@ -1760,10 +2435,78 @@ async function openPayment(promptUpload = false) {
       </div>`;
   }).join('');
 
-  goPage('pg-payment');
+  // ── Guest payment list (host only) ──
+  const guestPaySec  = document.getElementById('guest-pay-section');
+  const guestPayList = document.getElementById('guest-pay-list');
+  if (guestPayments?.length && isHost) {
+    guestPaySec.style.display = '';
+    guestPayList.innerHTML = guestPayments.map(gp => {
+      const gname     = gp.session_guests?.name || '?';
+      const breakdown = Array.isArray(gp.breakdown) ? gp.breakdown : [];
+      const bdHtml = breakdown.length > 1
+        ? `<div style="margin-top:5px;padding:7px 10px;background:var(--bg3);border-radius:8px">
+            ${breakdown.map(b=>`
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:2px">
+                <span>${b.name}</span><span>${fmt(b.amount)}</span>
+              </div>`).join('')}
+          </div>` : '';
+
+      const badgeHtml = gp.is_paid
+        ? `<span class="badge bp">✓ Đã thu</span>`
+        : `<span class="badge" style="background:rgba(255,107,71,.15);color:var(--accent3)">Chưa thu</span>`;
+
+      return `
+        <div class="card guest-pay-row" style="cursor:default">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,107,71,.2);
+              display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+              color:var(--accent3);flex-shrink:0">${initials(gname)}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span style="font-weight:600;font-size:14px">${gname}</span>
+                <span class="guest-badge">Khách</span>
+              </div>
+              <div style="color:var(--accent3);font-size:14px;font-weight:700;margin-top:2px">${fmt(gp.amount)}</div>
+              ${bdHtml}
+              ${gp.paid_at ? `<div style="color:var(--muted);font-size:11px;margin-top:4px">Thu lúc ${new Date(gp.paid_at).toLocaleString('vi-VN')}</div>` : ''}
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              ${badgeHtml}
+              ${gp.is_paid
+                ? `<button onclick="toggleGuestPaid('${gp.id}',true)"
+                    style="background:none;border:1px solid rgba(239,68,68,.25);color:var(--red);border-radius:8px;
+                    padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap">✕ Huỷ</button>`
+                : `<button onclick="toggleGuestPaid('${gp.id}',false)"
+                    style="background:none;border:1px solid rgba(34,197,94,.3);color:var(--green);border-radius:8px;
+                    padding:5px 10px;font-size:11px;cursor:pointer;white-space:nowrap">✓ Đã thu</button>`
+              }
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+  } else {
+    guestPaySec.style.display = 'none';
+  }
+
+  if (navigateTo) {
+    goPage('pg-payment');
+    startPaymentRealtime(session.id);
+  }
   if (promptUpload && myPay && !myPay.is_paid) {
     setTimeout(() => selfSec.scrollIntoView({ behavior:'smooth', block:'center' }), 400);
   }
+}
+
+// Host đánh dấu đã thu tiền mặt khách
+async function toggleGuestPaid(gpid, currentlyPaid) {
+  if (currentlyPaid) {
+    await db.from('guest_payments').update({ is_paid: false, paid_at: null }).eq('id', gpid);
+    toast('Đã huỷ xác nhận thu tiền khách');
+  } else {
+    await db.from('guest_payments').update({ is_paid: true, paid_at: new Date().toISOString() }).eq('id', gpid);
+    toast('✓ Đã thu tiền khách', 'ok');
+  }
+  openPayment(false, false);
 }
 
 // Host xác nhận chuyển khoản
@@ -1773,7 +2516,7 @@ async function hostConfirmPay(pid) {
     paid_at: new Date().toISOString()
   }).eq('id', pid);
   toast('✓ Đã xác nhận thanh toán', 'ok');
-  openPayment();
+  openPayment(false, false);
 }
 
 // Host từ chối — xóa hóa đơn, trả về trạng thái chưa trả
@@ -1786,7 +2529,7 @@ async function hostRejectPay(pid) {
     paid_at:     null
   }).eq('id', pid);
   toast('Đã từ chối — thành viên cần gửi lại hóa đơn');
-  openPayment();
+  openPayment(false, false);
 }
 
 // Host huỷ xác nhận đã trả
@@ -1795,7 +2538,7 @@ async function togglePaid(pid, cur) {
     is_paid: false, paid_at: null, receipt_url: null
   }).eq('id', pid);
   toast('Đã huỷ xác nhận');
-  openPayment();
+  openPayment(false, false);
 }
 
 // Member huỷ hóa đơn đã gửi để gửi lại
@@ -1804,7 +2547,7 @@ async function cancelTransferReceipt(pid) {
     receipt_url: null, paid_at: null, paid_method: 'transfer'
   }).eq('id', pid);
   toast('Đã huỷ — bạn có thể gửi hóa đơn mới');
-  openPayment();
+  openPayment(false, false);
 }
 
 // Thành viên bấm đã trả → hiện sheet chọn phương thức
@@ -1813,7 +2556,7 @@ async function selfMarkPaid(pid, currentlyPaid) {
     // Huỷ thanh toán
     await db.from('payments').update({ is_paid:false, paid_at:null, paid_method:'transfer' }).eq('id', pid);
     toast('Đã huỷ xác nhận');
-    openPayment();
+    openPayment(false, false);
     return;
   }
   // Chọn phương thức
@@ -1873,7 +2616,7 @@ async function choosePayMethod(method) {
     load(false);
     openTransferSheet(pid, amount);
   }
-  if (method === 'fund') openPayment();
+  if (method === 'fund') openPayment(false, false);
 }
 
 // ─────────────────────────────────────
@@ -1934,12 +2677,43 @@ async function confirmTransfer() {
   }).eq('id', transferPid);
   load(false);
   toast('✓ Đã gửi hóa đơn! Chờ host xác nhận', 'ok');
-  openPayment();
+  openPayment(false, false);
 }
 
 // ─────────────────────────────────────
 // FUND PAGE (thành viên)
 // ─────────────────────────────────────
+function updateBalanceDisplay(bal) {
+  const color = bal < 0 ? 'var(--red)' : bal === 0 ? 'var(--muted)' : '#a78bfa';
+  const text  = (bal < 0 ? '-' : '') + fmt(Math.abs(bal));
+  const sb = document.getElementById('sidebar-balance');
+  const hb = document.getElementById('home-balance');
+  if (sb) { sb.textContent = text; sb.style.color = color; }
+  if (hb) { hb.textContent = text; hb.style.color = color; }
+}
+
+async function checkAndShowLowFundAlert() {
+  if (!me?.id) return;
+  const bal = me.fund_balance || 0;
+  if (bal >= 0) return; // Không âm, không hiện
+
+  // Lấy danh sách buổi còn nợ
+  const { data: unpaid } = await db.from('payments')
+    .select('amount').eq('user_id', me.id).eq('is_paid', false);
+  const totalDebt = (unpaid||[]).reduce((s,p) => s+p.amount, 0);
+
+  document.getElementById('lf-amount').textContent = '-' + fmt(Math.abs(bal));
+  document.getElementById('lf-debt').textContent = totalDebt > 0
+    ? `Còn ${unpaid.length} buổi chưa thanh toán · ${fmt(totalDebt)}`
+    : 'Vui lòng đóng quỹ để bổ sung số dư';
+
+  document.getElementById('low-fund-overlay').classList.add('show');
+}
+
+function closeLowFundModal() {
+  document.getElementById('low-fund-overlay').classList.remove('show');
+}
+
 async function loadFundPage() {
   if (!me) return;
   // Refresh balance
@@ -1951,16 +2725,56 @@ async function loadFundPage() {
   }
   const bal = me.fund_balance || 0;
   const balEl = document.getElementById('fund-balance');
-  balEl.textContent = fmt(bal);
+  balEl.textContent = (bal < 0 ? '-' : '') + fmt(Math.abs(bal));
   balEl.className   = 'fund-bal' + (bal < 0 ? ' low' : '');
-  document.getElementById('fund-status-text').textContent =
-    bal < 0 ? '⚠️ Số dư âm — cần đóng quỹ' :
-    bal === 0 ? 'Quỹ trống' : '✓ Quỹ còn đủ';
+  updateBalanceDisplay(bal);
+
+  // Kiểm tra nợ buổi chưa trả
+  const { data: unpaid } = await db.from('payments')
+    .select('amount, sessions(title, scheduled_at)')
+    .eq('user_id', me.id).eq('is_paid', false);
+  const totalDebt = (unpaid||[]).reduce((s,p) => s+p.amount, 0);
+
+  let statusText = '';
+  if (bal < 0 && totalDebt > 0) {
+    statusText = `⚠️ Âm quỹ ${fmt(Math.abs(bal))} · Còn nợ ${unpaid.length} buổi (${fmt(totalDebt)})`;
+  } else if (bal < 0) {
+    statusText = `⚠️ Số dư âm — cần đóng quỹ ${fmt(Math.abs(bal))}`;
+  } else if (totalDebt > 0) {
+    statusText = `⚠️ Còn nợ ${unpaid.length} buổi · ${fmt(totalDebt)}`;
+  } else if (bal === 0) {
+    statusText = 'Quỹ trống';
+  } else {
+    statusText = '✓ Quỹ còn đủ';
+  }
+  document.getElementById('fund-status-text').textContent = statusText;
   document.getElementById('admin-panel-btn').style.display = me.is_admin ? '' : 'none';
 
-  // Load transactions của tôi
+  // Hiển thị nợ buổi nếu có
+  const debtEl = document.getElementById('fund-debt-list');
+  if (debtEl) {
+    if (unpaid?.length) {
+      debtEl.style.display = '';
+      debtEl.innerHTML = `
+        <div class="sec" style="margin-top:16px"><div class="sec-t" style="color:var(--red)">⚠️ Buổi chưa thanh toán</div></div>
+        ${unpaid.map(p => `
+          <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:12px;
+            padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:13px;font-weight:600">${p.sessions?.title||'?'}</div>
+              <div style="font-size:11px;color:var(--muted)">${p.sessions?.scheduled_at?fmtD(p.sessions.scheduled_at):''}</div>
+            </div>
+            <div style="font-size:14px;font-weight:700;color:var(--red)">-${fmt(p.amount)}</div>
+          </div>`).join('')}`;
+    } else {
+      debtEl.style.display = 'none';
+    }
+  }
+
+  // Load transactions của tôi (join sessions để lấy tên buổi)
   const { data: txns } = await db.from('fund_transactions')
-    .select('*').eq('user_id', me.id).order('created_at', {ascending:false}).limit(30);
+    .select('*, sessions(title)')
+    .eq('user_id', me.id).order('created_at', {ascending:false}).limit(30);
   renderFundTxnList(txns||[], document.getElementById('fund-txn-list'), false);
 }
 
@@ -1974,6 +2788,10 @@ function renderFundTxnList(txns, el, showUser) {
     const status = t.status === 'pending' ? '⏳ Chờ duyệt' : t.status === 'confirmed' ? '✓ Đã xác nhận' : '✕ Từ chối';
     const stCls  = t.status === 'pending' ? 'pending-row' : t.status === 'confirmed' ? 'confirmed-row' : 'rejected-row';
     const typeLabel = t.type === 'deposit' ? 'Đóng quỹ' : t.type === 'deduction' ? 'Trừ phí' : 'Hoàn tiền';
+    // Tên buổi — ưu tiên join sessions, fallback description
+    const sessionName = t.sessions?.title
+      ? `<div style="font-size:11px;color:var(--accent2);margin-top:2px">🏸 ${t.sessions.title}</div>`
+      : (t.description ? `<div style="font-size:11px;color:var(--muted);margin-top:2px">${t.description}</div>` : '');
     const receiptBtn = t.receipt_url
       ? `<button onclick="openLightbox('${t.receipt_url}')"
            style="background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;
@@ -1984,7 +2802,8 @@ function renderFundTxnList(txns, el, showUser) {
         <div style="flex:1;min-width:0">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
             <div>
-              <div style="font-size:13px;font-weight:600">${typeLabel}${t.description ? ' · ' + t.description : ''}</div>
+              <div style="font-size:13px;font-weight:600">${typeLabel}</div>
+              ${sessionName}
               <div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(t.created_at).toLocaleDateString('vi-VN')} · ${status}</div>
             </div>
             <div style="font-size:15px;font-weight:700;color:${isIn?'var(--green)':'var(--red)'}">
@@ -2088,7 +2907,7 @@ async function switchAdminTab(tab, cachedProfiles) {
     renderAdminMembers(profiles||[]);
   } else {
     const { data: txns } = await db.from('fund_transactions')
-      .select('*, profiles!user_id(name)')
+      .select('*, profiles!user_id(name), sessions(title)')
       .order('created_at', {ascending:false}).limit(50);
     renderAdminHistory(txns||[]);
   }
@@ -2147,10 +2966,47 @@ async function adminConfirmTxn(txnId, userId, amount, action) {
     const { data: p } = await db.from('profiles').select('fund_balance').eq('id', userId).single();
     const newBal = (p?.fund_balance || 0) + amount;
     await db.from('profiles').update({ fund_balance: newBal }).eq('id', userId);
+
+    // ── Change 4: Tự động trừ các buổi chưa thanh toán nếu đủ số dư ──
+    await autoPayPendingAfterDeposit(userId, newBal);
   }
   load(false);
   toast(action === 'confirmed' ? '✓ Đã xác nhận & cộng quỹ' : '✕ Đã từ chối', action==='confirmed'?'ok':'');
   loadAdminPage();
+}
+
+// Sau khi nạp quỹ: tự động trừ các buổi còn nợ
+async function autoPayPendingAfterDeposit(userId, currentBal) {
+  // Tìm các payment chưa trả của user này
+  const { data: unpaid } = await db.from('payments')
+    .select('id, amount, session_id, sessions(title)')
+    .eq('user_id', userId).eq('is_paid', false)
+    .order('created_at', { ascending: true });
+
+  if (!unpaid?.length) return;
+
+  let bal = currentBal;
+  for (const pay of unpaid) {
+    // Trừ dù âm (trả nợ cũ / bù âm)
+    const newBal = bal - pay.amount;
+    await db.from('profiles').update({ fund_balance: newBal }).eq('id', userId);
+    await db.from('fund_transactions').insert({
+      user_id:     userId,
+      amount:      -pay.amount,
+      type:        'deduction',
+      description: `Tự động trừ (nạp quỹ): ${pay.sessions?.title || ''}`,
+      session_id:  pay.session_id,
+      status:      'confirmed',
+      confirmed_by: me.id,
+      confirmed_at: new Date().toISOString()
+    });
+    await db.from('payments').update({
+      is_paid:     true,
+      paid_method: 'fund',
+      paid_at:     new Date().toISOString()
+    }).eq('id', pay.id);
+    bal = newBal;
+  }
 }
 
 function renderAdminMembers(profiles) {
@@ -2158,17 +3014,67 @@ function renderAdminMembers(profiles) {
   el.innerHTML = profiles.map(p => {
     const bal = p.fund_balance || 0;
     return `
-      <div class="admin-member-card">
+      <div class="admin-member-card" style="cursor:pointer" onclick="toggleAdminMemberTxn('${p.id}','${p.name}')">
         <div style="display:flex;align-items:center;gap:10px">
           <div class="av" style="background:${ac(p.id)};width:38px;height:38px;font-size:13px">${initials(p.name)}</div>
           <div style="flex:1">
             <div style="font-size:14px;font-weight:700">${p.name}</div>
             <div style="font-size:11px;color:var(--muted);margin-top:2px">${bal < 0 ? '⚠️ Âm quỹ' : bal === 0 ? 'Quỹ trống' : '✓ Còn quỹ'}</div>
           </div>
-          <div style="font-size:16px;font-weight:800;color:${bal<0?'var(--red)':bal===0?'var(--muted)':'#a78bfa'}">${fmt(bal)}</div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:16px;font-weight:800;color:${bal<0?'var(--red)':bal===0?'var(--muted)':'#a78bfa'}">${fmt(bal)}</div>
+            <span id="arrow-${p.id}" style="color:var(--muted);font-size:12px;transition:transform .2s">▼</span>
+          </div>
+        </div>
+        <div id="txn-detail-${p.id}" style="display:none;margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+          <div style="color:var(--muted);font-size:11px;margin-bottom:8px">Đang tải...</div>
         </div>
       </div>`;
   }).join('') || '<div class="empty" style="padding:28px"><div>Chưa có thành viên nào</div></div>';
+}
+
+// Map lưu trạng thái expand của từng member
+const adminMemberExpanded = {};
+
+async function toggleAdminMemberTxn(userId, userName) {
+  const detail = document.getElementById('txn-detail-'+userId);
+  const arrow  = document.getElementById('arrow-'+userId);
+  if (!detail) return;
+
+  const isOpen = adminMemberExpanded[userId];
+  adminMemberExpanded[userId] = !isOpen;
+  arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+  detail.style.display  = isOpen ? 'none' : '';
+
+  if (!isOpen) {
+    // Load giao dịch
+    const { data: txns } = await db.from('fund_transactions')
+      .select('*').eq('user_id', userId)
+      .order('created_at', { ascending: false }).limit(20);
+
+    if (!txns?.length) {
+      detail.innerHTML = '<div style="color:var(--muted);font-size:12px">Chưa có giao dịch nào</div>';
+      return;
+    }
+    detail.innerHTML = txns.map(t => {
+      const isIn = t.amount > 0;
+      const status = t.status === 'pending' ? '⏳' : t.status === 'confirmed' ? '✓' : '✕';
+      const typeLabel = t.type === 'deposit' ? 'Đóng quỹ' : t.type === 'deduction' ? 'Trừ phí' : 'Hoàn tiền';
+      return `
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+          <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+            font-size:11px;font-weight:700;background:${isIn?'rgba(34,197,94,.15)':'rgba(239,68,68,.1)'};
+            color:${isIn?'var(--green)':'var(--red)'}">${isIn?'↑':'↓'}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:600">${typeLabel}${t.description?' · '+t.description:''}</div>
+            <div style="font-size:10px;color:var(--muted)">${new Date(t.created_at).toLocaleString('vi-VN')} ${status}</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:${isIn?'var(--green)':'var(--red)'}">
+            ${isIn?'+':''}${fmt(t.amount)}
+          </div>
+        </div>`;
+    }).join('');
+  }
 }
 
 async function renderAdminHistory(txns) {
@@ -2185,6 +3091,7 @@ async function renderAdminHistory(txns) {
           <div style="display:flex;justify-content:space-between">
             <div>
               <div style="font-size:13px;font-weight:600">${t.profiles?.name||'?'} · ${typeLabel}</div>
+              ${t.sessions?.title ? `<div style="font-size:11px;color:var(--accent2);margin-top:1px">🏸 ${t.sessions.title}</div>` : (t.description ? `<div style="font-size:11px;color:var(--muted);margin-top:1px">${t.description}</div>` : '')}
               <div style="font-size:11px;color:var(--muted);margin-top:2px">${new Date(t.created_at).toLocaleDateString('vi-VN')} ${status}</div>
             </div>
             <div style="font-size:14px;font-weight:700;color:${isIn?'var(--green)':'var(--red)'}">
@@ -2218,7 +3125,7 @@ async function uploadMyReceipt(input, paymentId) {
     await db.from('payments').update({ receipt_url: base64 }).eq('id', paymentId);
     load(false);
     toast('✓ Đã đính kèm hóa đơn!','ok');
-    openPayment();
+    openPayment(false, false);
   } catch(e) {
     load(false); toast('Lỗi xử lý ảnh: '+e.message,'err');
   }
@@ -2288,6 +3195,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+// ── Đăng ký Service Worker (PWA offline) ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .catch(err => console.warn('SW:', err));
+  });
+}
 
 init();
 </script>
